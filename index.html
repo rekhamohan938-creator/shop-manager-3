@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shop Manager Game – Full Features</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(90deg, #fceabb, #f8b500);
+      text-align: center;
+      padding: 20px;
+    }
+    .card {
+      border: 5px solid;
+      border-radius: 20px;
+      padding: 15px;
+      margin: 20px auto;
+      display: inline-block;
+      background-color: #fff;
+      width: 350px;
+    }
+    .vip {
+      border-image: linear-gradient(to right, gold, orange, red, violet, blue, green) 1;
+      box-shadow: 0 0 15px gold;
+    }
+    .common {
+      border: 5px solid silver;
+      box-shadow: 0 0 8px #ccc;
+    }
+    #profitBar, #xpBar, #reputationBar, #levelBar {
+      position: fixed;
+      top: 10px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: bold;
+    }
+    #profitBar { right: 20px; background: #222; color: #0f0; }
+    #xpBar { left: 20px; background: #444; color: #0ff; }
+    #reputationBar { top: 60px; left: 20px; background: #008; color: #fff; }
+    #levelBar { top: 60px; right: 20px; background: #800; color: #fff; }
+    select {
+      padding: 5px; margin-top: 10px; width: 90%; border-radius: 10px;
+    }
+    .popup {
+      background: rgba(255, 255, 0, 0.8);
+      padding: 5px;
+      border-radius: 5px;
+      margin-top: 10px;
+      color: #000;
+      font-weight: bold;
+    }
+    #shopMenu {
+      display: none;
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      background: #fff;
+      border: 2px solid #000;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    #shopMenu button { display: block; margin: 5px auto; }
+  </style>
+</head>
+<body>
+
+<h1>🍽️ Shop Manager Game – VIP Food Cycle</h1>
+<div id="profitBar">💰 Profit: ₹<span id="profit">100</span> <button onclick="toggleShopMenu()">⚙️</button></div>
+<div id="xpBar">🧠 XP: <span id="xp">0</span></div>
+<div id="reputationBar">🎯 Reputation: <span id="reputation">0</span></div>
+<div id="levelBar">🔼 Level: <span id="level">1</span></div>
+
+<div id="shopMenu">
+  <button onclick="buyShop()">🏪 Buy Shop (₹100)</button>
+  <button onclick="hireWorker()">👨‍🔧 Hire Worker (₹300)</button>
+</div>
+
+<div id="customerArea"></div>
+
+<script>
+// JavaScript logic inserted from previous full working version
+let profit = 100, xp = 0, reputation = 0, level = 1, extraShops = 0, customerQueue = [], currentIndex = 0;
+
+const commonFoods = [
+  { name: "Pizza", emoji: "🍕" }, { name: "Pav Bhaji", emoji: "🥘" },
+  { name: "Aloo Paratha", emoji: "🥙" }, { name: "Butter Chicken", emoji: "🍗" },
+  { name: "Masala Dosa", emoji: "🥞" }, { name: "Biryani", emoji: "🍚" },
+  { name: "Chole Bhature", emoji: "🍛" }, { name: "Paneer Tikka", emoji: "🧀" },
+  { name: "Samosa", emoji: "🥟" }, { name: "Dhokla", emoji: "🍥" }
+];
+const rareFoods = [
+  { name: "Pulasa Fish", emoji: "🐟" }, { name: "Kopi Luwak Coffee", emoji: "☕" },
+  { name: "Gold Plated Dosa", emoji: "🥞" }, { name: "Exotica", emoji: "🍬" },
+  { name: "Wagyu Beef", emoji: "🥩" }
+];
+
+function updateBars() {
+  document.getElementById("profit").textContent = profit;
+  document.getElementById("xp").textContent = xp;
+  document.getElementById("reputation").textContent = reputation;
+  document.getElementById("level").textContent = level;
+}
+
+function toggleShopMenu() {
+  const menu = document.getElementById("shopMenu");
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+function buyShop() {
+  if (profit >= 100) { profit -= 100; reputation += 10; extraShops++; updateBars(); alert("🏪 New shop added!"); }
+  else alert("Not enough profit!");
+}
+function hireWorker() {
+  if (profit >= 300) { profit -= 300; updateBars(); alert("👨‍🔧 Worker hired!"); }
+  else alert("Not enough profit!");
+}
+function createCustomerQueue() {
+  const common = Array.from({ length: 10 + extraShops }, () => ({ type: "common" }));
+  const vip = Array.from({ length: 3 }, () => ({ type: "vip" }));
+  customerQueue = [...common, ...vip].sort(() => Math.random() - 0.5);
+}
+function spawnNextCustomer() {
+  if (currentIndex >= customerQueue.length) {
+    document.getElementById("customerArea").innerHTML = "<h2>✅ All customers served!</h2>"; return;
+  }
+  const { type } = customerQueue[currentIndex++];
+  type === "vip" ? createVIPCard() : createCommonCard();
+}
+function createCommonCard() {
+  const food = commonFoods[Math.floor(Math.random() * commonFoods.length)];
+  const card = document.createElement("div");
+  card.className = "card common";
+  card.dataset.correctFood = food.name.toLowerCase();
+  let dropdown = `<select><option value="">--Choose Food--</option>`;
+  commonFoods.forEach(f => dropdown += `<option value="${f.name.toLowerCase()}">${f.emoji} ${f.name}</option>`);
+  dropdown += `</select>`;
+  card.innerHTML = `
+    <h3>🧍‍♂️ Common Customer</h3><p>Wants: <strong>${food.emoji} ${food.name}</strong></p>
+    <p>Mood: <span class="mood">Neutral</span></p>
+    <p>Price: ₹<span class="price">30</span></p>${dropdown}<br>
+    <button onclick="serveCommon(this)">Serve</button>
+    <button onclick="bargain(this)">Bargain</button>
+    <div class="popup"></div>`;
+  document.getElementById("customerArea").innerHTML = ""; document.getElementById("customerArea").appendChild(card);
+}
+function serveCommon(button) {
+  const card = button.parentElement, select = card.querySelector("select");
+  const selected = select.value.toLowerCase(), correct = card.dataset.correctFood;
+  const popup = card.querySelector(".popup"), mood = card.querySelector(".mood");
+  const price = parseInt(card.querySelector(".price").textContent);
+  if (selected === correct) { mood.textContent = "Happy"; profit += price; popup.textContent = "✅ Happy!"; }
+  else { mood.textContent = "Okay"; popup.textContent = "❌ Wrong food!"; }
+  updateBars(); disableCard(card); setTimeout(spawnNextCustomer, 2000);
+}
+function bargain(button) {
+  const card = button.parentElement, priceSpan = card.querySelector(".price"), mood = card.querySelector(".mood");
+  const popup = card.querySelector(".popup");
+  if (mood.textContent !== "Happy") {
+    priceSpan.textContent = "10"; mood.textContent = "Happy"; popup.textContent = "🤑 Bargain success!"; profit -= 20;
+  } else popup.textContent = "😐 Already happy.";
+  updateBars();
+}
+function createVIPCard() {
+  const food = commonFoods[Math.floor(Math.random() * commonFoods.length)];
+  const card = document.createElement("div"); card.className = "card vip";
+  card.dataset.stage = "1"; card.dataset.correctFood = food.name.toLowerCase();
+  let dropdown = `<select class="vip-select"><option value="">--Choose Food--</option>`;
+  commonFoods.forEach(f => dropdown += `<option value="${f.name.toLowerCase()}">${f.emoji} ${f.name}</option>`);
+  dropdown += `</select>`;
+  card.innerHTML = `
+    <h3>🌟 VIP Customer</h3>
+    <p class="vipRequest">Wants: <strong>${food.emoji} ${food.name}</strong></p>
+    <p>Mood: <span class="mood">Neutral</span></p>
+    <div class="vipControls">${dropdown}<br><button onclick="serveVIP(this)">Serve</button></div>
+    <div class="popup">⏱ 30s left</div>`;
+  document.getElementById("customerArea").innerHTML = ""; document.getElementById("customerArea").appendChild(card);
+  startVIPTimer(card);
+}
+function serveVIP(button) {
+  const card = button.closest(".card"), stage = card.dataset.stage;
+  const popup = card.querySelector(".popup"), mood = card.querySelector(".mood");
+  const select = button.parentElement.querySelector("select"), selected = select.value.toLowerCase();
+  const correct = card.dataset.correctFood; clearInterval(card.timer);
+  if (selected === correct) {
+    if (stage === "1") {
+      xp += 5; mood.textContent = "Happy"; popup.textContent = "😎 Now bring rare!"; card.dataset.stage = "2";
+      const rare = rareFoods[Math.floor(Math.random() * rareFoods.length)];
+      card.dataset.correctFood = rare.name.toLowerCase();
+      card.querySelector(".vipRequest").innerHTML = `Wants: <strong>${rare.emoji} ${rare.name}</strong>`;
+      let rareDropdown = `<select class="vip-select"><option value="">--Choose Rare--</option>`;
+      rareFoods.forEach(f => rareDropdown += `<option value="${f.name.toLowerCase()}">${f.emoji} ${f.name}</option>`);
+      rareDropdown += `</select>`;
+      card.querySelector(".vipControls").innerHTML = `${rareDropdown}<br><button onclick="serveVIP(this)">Serve Rare</button>`;
+      startVIPTimer(card);
+    } else {
+      xp += 10; profit += 50; reputation += 10; mood.textContent = "Super Happy!";
+      popup.textContent = "🎉 VIP satisfied! +10 Rep";
+      if (reputation >= 100) { reputation = 0; level++; popup.textContent += " 🔼 Level Up!"; }
+      updateBars(); disableCard(card); setTimeout(spawnNextCustomer, 3000);
+    }
+  } else {
+    mood.textContent = "Angry"; xp = Math.max(0, xp - 5); popup.textContent = "❌ Wrong! VIP angry!";
+    updateBars(); disableCard(card); setTimeout(spawnNextCustomer, 3000);
+  }
+}
+function startVIPTimer(card) {
+  const popup = card.querySelector(".popup"); let time = 30;
+  card.timer = setInterval(() => {
+    time--;
+    if (time > 0) popup.textContent = `⏱ ${time}s left`;
+    else {
+      clearInterval(card.timer);
+      const mood = card.querySelector(".mood");
+      if (mood.textContent !== "Super Happy") {
+        mood.textContent = "Angry"; xp = Math.max(0, xp - 5); popup.textContent = "⏰ Time's up!";
+        updateBars(); disableCard(card); setTimeout(spawnNextCustomer, 3000);
+      }
+    }
+  }, 1000);
+}
+function disableCard(card) {
+  card.querySelectorAll("select").forEach(s => s.disabled = true);
+  card.querySelectorAll("button").forEach(b => b.disabled = true);
+}
+
+createCustomerQueue(); updateBars(); spawnNextCustomer();
+</script>
+
+</body>
+</html>
